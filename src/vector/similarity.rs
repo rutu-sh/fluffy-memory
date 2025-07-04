@@ -23,6 +23,19 @@
 use std::arch::x86_64::*;
 
 
+pub fn cosine_sim(v1: &[f32], v2: &[f32]) -> f32 {
+    assert_eq!(v1.len(), v2.len());
+
+    let mut res: f32 = 0.0;
+
+    for (a, b) in v1.iter().zip(v2.iter()) {
+        res += a * b;
+    } 
+
+    res 
+}
+
+
 
 pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
 
