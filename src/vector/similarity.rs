@@ -21,6 +21,7 @@
 
 
 use std::arch::x86_64::*;
+use rayon;
 
 
 pub fn cosine_sim(v1: &[f32], v2: &[f32]) -> f32 {
@@ -34,6 +35,33 @@ pub fn cosine_sim(v1: &[f32], v2: &[f32]) -> f32 {
 
     res 
 }
+
+
+pub fn mul_vec(va: &[f32], vb: &[f32]) -> f32 {
+    assert_eq!(va.len(), vb.len());
+
+
+    let mut res: f32 = 0.0;
+    for i in 0..va.len() {
+        res += va[i] * vb[i];
+    }
+
+    res
+}
+
+
+pub fn cosine_sim_rayon(v1: &[f32], v2: &[f32]) -> f32 {
+  
+    assert_eq!(v1.len(), v2.len());
+
+    let l = v1.len();
+    let mid = l /2;
+
+    let (ra, rb) = rayon::join(|| mul_vec(&v1[..mid], &v2[..mid]), || mul_vec(&v1[mid..], &v2[mid..]) );
+
+    ra + rb
+}
+
 
 
 pub fn cosine_sim_v(v1: &[f32], v2: &[f32]) -> f32 {
