@@ -43,7 +43,6 @@ pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
 
     let len = v1.len();
     let chunks = len / 8;
-    let remainder = len % 8;
     let mut sum = [0.0f32; 8];
 
     unsafe {
@@ -52,8 +51,8 @@ pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
         for i in 0..chunks {
 
                 let idx = i * 8;
-                let va = _mm256_loadu_ps(v1.as_ptr().add(idx));
-                let vb = _mm256_loadu_ps(v2.as_ptr().add(idx));
+                let va = _mm256_load_ps(v1.as_ptr().add(idx));
+                let vb = _mm256_load_ps(v2.as_ptr().add(idx));
                 let prod = _mm256_mul_ps(va, vb);
                 acc = _mm256_add_ps(acc, prod);
         } 
@@ -61,13 +60,6 @@ pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
         _mm256_storeu_ps(sum.as_mut_ptr(), acc);
     }
  
-    let mut res = sum.iter().sum::<f32>();
-    if remainder > 0 {
-        let start = chunks * 8;
-        for i in 0..remainder {
-            res += v1[start + i] * v2[start + i];
-        }
-    }
+    sum.iter().sum::<f32>()
 
-    res
 }

@@ -24,7 +24,7 @@ fn main() {
 
         let duration = start_time.elapsed();
 
-        println!("avx2: duration: {:?}", duration);
+        println!("avx2 duration: {:?}", duration);
 
     } 
 
