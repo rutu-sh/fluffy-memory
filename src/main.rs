@@ -28,6 +28,8 @@ fn main() {
 
     } 
 
+    println!("running cosine_sim");
+
     let vctr: Vec<f32> = vec![5.0; 1000000];
     let vctr2: Vec<f32> = vec![6.0; 1000000];
 
@@ -41,5 +43,19 @@ fn main() {
 
     println!("cosine-sim duration: {:?}", duration);
 
+    println!("running cosine_sim_v");
+
+    let vctr: Vec<f32> = vec![5.0; 1000000];
+    let vctr2: Vec<f32> = vec![6.0; 1000000];
+
+    let v1 = VectorFloat32::new(&vctr);
+    let v2 = VectorFloat32::new(&vctr2);
+
+    let start_time = Instant::now();
+    let res = similarity::cosine_sim_v(&v1.unit_vec, &v2.unit_vec);
+    println!("res = {}", res);
+    let duration = start_time.elapsed();
+
+    println!("cosine-sim duration: {:?}", duration);
 
 }

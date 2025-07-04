@@ -36,6 +36,17 @@ pub fn cosine_sim(v1: &[f32], v2: &[f32]) -> f32 {
 }
 
 
+pub fn cosine_sim_v(v1: &[f32], v2: &[f32]) -> f32 {
+    assert_eq!(v1.len(), v2.len());
+
+    let mut res: f32 = 0.0;
+    for i in 0..v1.len() {
+        res += v1[i] * v2[i];
+    }
+
+    res
+}
+
 
 pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
 
@@ -51,8 +62,8 @@ pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
         for i in 0..chunks {
 
                 let idx = i * 8;
-                let va = _mm256_load_ps(v1.as_ptr().add(idx));
-                let vb = _mm256_load_ps(v2.as_ptr().add(idx));
+                let va = _mm256_loadu_ps(v1.as_ptr().add(idx));
+                let vb = _mm256_loadu_ps(v2.as_ptr().add(idx));
                 let prod = _mm256_mul_ps(va, vb);
                 acc = _mm256_add_ps(acc, prod);
         } 
@@ -63,3 +74,4 @@ pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
     sum.iter().sum::<f32>()
 
 }
+
