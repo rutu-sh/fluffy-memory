@@ -1,3 +1,6 @@
+[profile.release]
+opt-level = 3
+
 [package]
 name = "fluffy-memory"
 version = "0.1.0"
