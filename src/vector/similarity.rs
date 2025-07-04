@@ -1,70 +1,7 @@
-// highly optimized cosine similarity
-//
-// 1. make cosine similarity of two vectors as fast as possible
-// 2. make batch multiplication operation as fast as possible
+use crate::vector::ndvec::VectorFloat32;
 
-/*
- * src: 
- *
- * 1. https://www.nickwilcox.com/blog/autovec/
- * 2. https://www.nickwilcox.com/blog/autovec2/
- * 3. https://github.com/arduano/simdeez
- *
- *
- * SIMD: 
- *  ps = packed single precision (f32)
- *  pd = packed double precision (f64)
- *
- *  __m256 = a 256 bit wide data struct for 8 (32 bit) floating point values
- * 
-*/
-
-
-use std::arch::x86_64::*;
-use rayon;
-
-
-pub fn cosine_sim(v1: &[f32], v2: &[f32]) -> f32 {
-    assert_eq!(v1.len(), v2.len());
-
-    let mut res: f32 = 0.0;
-
-    for (a, b) in v1.iter().zip(v2.iter()) {
-        res += a * b;
-    } 
-
-    res 
-}
-
-
-pub fn mul_vec(va: &[f32], vb: &[f32]) -> f32 {
-    assert_eq!(va.len(), vb.len());
-
-
-    let mut res: f32 = 0.0;
-    for i in 0..va.len() {
-        res += va[i] * vb[i];
-    }
-
-    res
-}
-
-
-pub fn cosine_sim_rayon(v1: &[f32], v2: &[f32]) -> f32 {
-  
-    assert_eq!(v1.len(), v2.len());
-
-    let l = v1.len();
-    let mid = l /2;
-
-    let (ra, rb) = rayon::join(|| mul_vec(&v1[..mid], &v2[..mid]), || mul_vec(&v1[mid..], &v2[mid..]) );
-
-    ra + rb
-}
-
-
-
-pub fn cosine_sim_v(v1: &[f32], v2: &[f32]) -> f32 {
+#[inline(always)]
+fn dot_p(v1: &[f32], v2: &[f32]) -> f32 {
     assert_eq!(v1.len(), v2.len());
 
     let mut res: f32 = 0.0;
@@ -75,68 +12,11 @@ pub fn cosine_sim_v(v1: &[f32], v2: &[f32]) -> f32 {
     res
 }
 
+#[inline(always)]
+pub fn cosine_sim(v1: &VectorFloat32, v2: &VectorFloat32) -> f32 {
 
-pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
+    assert_eq!(v1.dim, v2.dim);
 
-    assert_eq!(v1.len(), v2.len());
-
-    let len = v1.len();
-    let chunks = len / 8;
-    let mut sum = [0.0f32; 8];
-
-    unsafe {
-        let mut acc = _mm256_setzero_ps();
-
-        for i in 0..chunks {
-
-                let idx = i * 8;
-                let va = _mm256_loadu_ps(v1.as_ptr().add(idx));
-                let vb = _mm256_loadu_ps(v2.as_ptr().add(idx));
-                let prod = _mm256_mul_ps(va, vb);
-                acc = _mm256_add_ps(acc, prod);
-        } 
-        
-        _mm256_storeu_ps(sum.as_mut_ptr(), acc);
-    }
- 
-    sum.iter().sum::<f32>()
+    dot_p(&v1.vector, &v2.vector) / (v1.r * v2.r)
 
 }
-
-
-pub unsafe fn cosine_sim_avx2_new(v1: &[f32], v2: &[f32]) -> f32 {
-    assert_eq!(v1.len(), v2.len());
-    let len = v1.len();
-    let chunks = len / 8;
-
-    unsafe {
-
-        let mut acc = _mm256_setzero_ps();
-
-        for i in 0..chunks {
-            let idx = i * 8;
-            let a = _mm256_loadu_ps(v1.as_ptr().add(idx));
-            let b = _mm256_loadu_ps(v2.as_ptr().add(idx));
-            acc = _mm256_fmadd_ps(a, b, acc);  // fused multiply-add
-        }
-
-        // Horizontal add
-        let hi = _mm256_extractf128_ps(acc, 1);
-        let lo = _mm256_castps256_ps128(acc);
-        let sum128 = _mm_add_ps(lo, hi);
-        let sum64 = _mm_add_ps(sum128, _mm_movehl_ps(sum128, sum128));
-        let sum32 = _mm_add_ps(sum64, _mm_shuffle_ps(sum64, sum64, 0b0000_1110));
-        let dot = _mm_cvtss_f32(sum32);
-
-        // Handle remainder (if any)
-        let mut tail_sum = 0.0;
-        for i in (chunks * 8)..len {
-            tail_sum += v1[i] * v2[i];
-        }
-
-        return dot + tail_sum
-    }
-
-}
-
-
