@@ -103,3 +103,40 @@ pub unsafe fn cosine_sim_avx2(v1: &[f32], v2: &[f32]) -> f32 {
 
 }
 
+
+pub unsafe fn cosine_sim_avx2_new(v1: &[f32], v2: &[f32]) -> f32 {
+    assert_eq!(v1.len(), v2.len());
+    let len = v1.len();
+    let chunks = len / 8;
+
+    unsafe {
+
+        let mut acc = _mm256_setzero_ps();
+
+        for i in 0..chunks {
+            let idx = i * 8;
+            let a = _mm256_loadu_ps(v1.as_ptr().add(idx));
+            let b = _mm256_loadu_ps(v2.as_ptr().add(idx));
+            acc = _mm256_fmadd_ps(a, b, acc);  // fused multiply-add
+        }
+
+        // Horizontal add
+        let hi = _mm256_extractf128_ps(acc, 1);
+        let lo = _mm256_castps256_ps128(acc);
+        let sum128 = _mm_add_ps(lo, hi);
+        let sum64 = _mm_add_ps(sum128, _mm_movehl_ps(sum128, sum128));
+        let sum32 = _mm_add_ps(sum64, _mm_shuffle_ps(sum64, sum64, 0b0000_1110));
+        let dot = _mm_cvtss_f32(sum32);
+
+        // Handle remainder (if any)
+        let mut tail_sum = 0.0;
+        for i in (chunks * 8)..len {
+            tail_sum += v1[i] * v2[i];
+        }
+
+        return dot + tail_sum
+    }
+
+}
+
+
