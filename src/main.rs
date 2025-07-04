@@ -2,7 +2,7 @@ mod vector;
 
 use vector::ndvec::VectorFloat32;
 use vector::similarity;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 fn main() {
 
