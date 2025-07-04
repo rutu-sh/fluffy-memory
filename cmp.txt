@@ -1,0 +1,23 @@
+// sequential code
+
+Hello, world!
+sim: -0.9999999
+duration: 25.292µs
+
+Hello, world!
+sim: -1.0000001
+duration: 13.857084ms
+
+
+// parallel code 
+
+Hello, world!
+sim: 0.9979999
+duration: 364.208µs
+
+
+100000
+
+Hello, world!
+sim: 0.9999981
+duration: 3.049875ms
